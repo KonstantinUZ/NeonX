@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets" id="http://knsw.visualstudio.com/DigitalWatch" version="1.0.0" height="360" width="360" viewmodes="fullscreen">
+    <tizen:application id="CMjPlAuPUd.NeonX" package="CMjPlAuPUd" required_version="2.3.1" ambient_support="enable"/>
+    <author email="konstantin.software@live.com">Konstantin Software</author>
+    <tizen:category name="http://tizen.org/category/wearable_clock"/>
+    <content src="index.html"/>
+    <description>Bright and art designed neon digital.</description>
+    <feature name="tizen.org/feature/screen.size.normal"/>
+    <icon src="icon.png"/>
+    <name>Neon X</name>
+    <tizen:privilege name="http://tizen.org/privilege/bluetooth.gap"/>
+    <tizen:privilege name="http://tizen.org/privilege/application.launch"/>
+    <tizen:privilege name="http://tizen.org/privilege/healthinfo"/>
+    <tizen:privilege name="http://tizen.org/privilege/alarm"/>
+    <tizen:profile name="wearable"/>
+    <tizen:setting background-support="disable" encryption="disable" hwkey-event="enable"/>
+</widget>
