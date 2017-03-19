@@ -220,7 +220,7 @@
         batteryFill.style.display = "block";
         barometer.style.display = "block";
         wifi.style.display = "block";
-        bt.style.display = "block";
+        bt.style.display = "none";
         
         if(timerUpdateTime)
     	{
@@ -452,14 +452,20 @@
         
         strDay.onclick = function(){
         	LaunchApp("com.samsung.w-calendar2");
-        };        
+        };
+        
+        wifi.onclick = function(){
+        	LaunchApp("com.samsung.wifi");
+        }
     }
     
     function onLaunchAppSuccess () {
-        console.log("App launched");}
+        console.log("App launched");
+    }
 
     function onLaunchAppError () {
-        console.log("Cannot Launch App");}    
+    	console.log("Cannot Launch App");
+    }    
     
     function LaunchApp(appId)
     {
@@ -468,7 +474,7 @@
     
     function updateInAppList()
     {
-    	webapis.inapppurchase.getItemList(1, 15, "Non-consumable", "IAP_SUCCESS_TEST_MODE", 
+    	/*webapis.inapppurchase.getItemList(1, 15, "Non-consumable", "IAP_SUCCESS_TEST_MODE", 
     			function(result) // onSuccess
     			{
 					for (var i = 0; i < result._items.length; i++)
@@ -480,7 +486,7 @@
     			function(error) // onError
     			{
     				alert("IAP:" + error);
-    			});
+    			});*/
     }
 
     /**
