@@ -1,96 +1,85 @@
-/*
- * Copyright (c) 2015 Samsung Electronics Co., Ltd. All rights reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 (function() {
-    var timerUpdateTime = 0,
-    	timerUpdateDate = 0,
-    	timerUpdateBarometer = 0,
-        flagDigital = false,
-        BACKGROUND_URL = "url('./images/bg.png')",
+    var tickTimer = 0,
+    	BACKGROUND_URL = "url('./images/bg.png')",
         BACKGROUND_AMBIENT_URL = "url('./images/bgambient.png')",
         battery = navigator.battery || navigator.webkitBattery || navigator.mozBattery,
-        colorSelect = "neon-blue",
         digitalBody = document.getElementById("digital-body"),
-        timeBody = document.getElementById("rec-time"),
         strDay = document.getElementById("str-day"),
+        colorPrev = document.getElementById("color-prev"),
+        colorNext = document.getElementById("color-next"),
         wifi = document.getElementById("wifi"),
-        bt = document.getElementById("bluetooth"),
         strHours = document.getElementById("str-hours"),
         strMinutes = document.getElementById("str-minutes"),
         batteryFill = document.getElementById("battery-fill"),
         barometer = document.getElementById("barometer"),
-        pressureSensor;
+        pressureSensor = tizen.sensorservice.getDefaultSensor("PRESSURE"),
+        colorBrightness = 181;
+
+    var colors = [
+                  {
+	            	  	name: "color-white",
+	            	  	color:"#FFFFFF",
+	            	  	free: false
+                  },
+                  {
+	              	  	name: "color-red",
+	              	  	color:"#FF0000",
+	              	  	free: true
+                  },
+                  {
+                	  	name: "color-green",
+                	  	color:"#39FF14",
+                	  	free: true
+                  },
+                  {
+	              	  	name: "color-blue",
+	              	  	color:"#1133FF",
+	              	  	free: true
+                  },
+                  {
+                	  	name: "neon-yellow",
+                	  	color:"#F3F315",
+                	  	free: false
+                  },
+                  {
+		          	  	name: "neon-orange",
+		          	  	color:"#FF9933",
+		          	  	free: false
+                  },
+                  {
+                	  	name: "neon-pink",
+                	  	color:"#FF00CC",
+                	  	free: false
+                  },
+                  {
+	              	  	name: "neon-green",
+	              	  	color:"#C1FD33",
+	              	  	free: true
+                  },
+                  {
+	              	  	name: "neon-blue",
+	              	  	color:"#0DD5FC",
+	              	  	free: true
+                  }],
+    colorCursor = 8,
+    colorSelect = colors[colorCursor];
+    
     
     /**
      * Updates the date and sets refresh callback on the next day.
      * @private
      * @param {number} prevDay - date of the previous day
      */
-    function updateDate(prevDay) {
+    function updateDate() {
     	try
     	{
 	        var datetime = tizen.time.getCurrentDateTime(),
-	            nextInterval,
 	            strFullDate,
-	            getWeekDay = datetime.getDay(),
-	            getMonthDay = datetime.getDate()/*,
-	            getMonth = datetime.getMonth() + 1,
-	            getYear = datetime.getFullYear()*/;
+	            monthDay = datetime.getDate();
 	
-	        // Check the update condition.
-	        // if prevDate is '0', it will always update the date.
-	        if (prevDay !== null) {
-	            if (prevDay === getWeekDay) {
-	                /**
-	                 * If the date was not changed (meaning that something went wrong),
-	                 * call updateDate again after a second.
-	                 */
-	                nextInterval = 1000;
-	            } else {
-	                /**
-	                 * If the day was changed,
-	                 * call updateDate at the beginning of the next day.
-	                 */
-	                // Calculate how much time is left until the next day.
-	                nextInterval =
-	                    (23 - datetime.getHours()) * 60 * 60 * 1000 +
-	                    (59 - datetime.getMinutes()) * 60 * 1000 +
-	                    (59 - datetime.getSeconds()) * 1000 +
-	                    (1000 - datetime.getMilliseconds()) +
-	                    1;
-	            }
-	        }
-	
-	        if (getMonthDay < 10) {
-	        	getMonthDay = "0" + getMonthDay;
-	        }
-	
-	        strFullDate = getMonthDay;
-	        strDay.innerHTML = strFullDate;
-	
-	        // If an updateDate timer already exists, clear the previous timer.
-	        if (timerUpdateDate) {
-	            clearTimeout(timerUpdateDate);
-	        }
-	
-	        // Set next timeout for date update.
-	        timerUpdateDate = setTimeout(function() {
-	            updateDate(getWeekDay);
-	        }, nextInterval);
-	    	}
+	        strFullDate = monthDay;
+	        strDay.innerHTML = monthDay < 10 ? "0" + monthDay : monthDay;
+    	}
     	catch(e)
     	{
     		
@@ -108,20 +97,13 @@
 	            hour = datetime.getHours(),
 	            minute = datetime.getMinutes();
 	
-	        strHours.innerHTML = hour;
-	        strMinutes.innerHTML = minute;
-	
-	            if (hour < 10) {
-	                strHours.innerHTML = "0" + hour;
-	            }
-	
-	        if (minute < 10) {
-	            strMinutes.innerHTML = "0" + minute;
-	        }
+	        strHours.innerHTML = hour < 10 ? "0" + hour : hour;
+	        strMinutes.innerHTML = minute < 10 ? "0" + minute : minute;
     	}
     	catch(e)
     	{
-    		
+    		strHours.innerHTML = "--";
+    		strMinutes.innerHTML = "--";
     	}
     }
     
@@ -152,58 +134,32 @@
     	}
     	return (usePound ? "#" : "") + (g | (b << 8) | (r << 16)).toString(16);
     }
-
-    function getColorById(id)
-    {
-    	switch(id)
-    	{
-    	case "color-white":
-    		return "#ffffff";
-    		
-    	case "color-red":
-    		return "#ff0000";
-    		
-    	case "color-green":
-    		return "#00ff00";
-    		
-    	case "color-blue":
-    		return "#0000ff";
-    		
-    	case "neon-yellow":
-    		return "#e3e829";
-    		
-    	case "neon-orange":
-    		return "#ffaa4d";
-    		
-    	case "neon-pink":
-    		return "#ff3eb5";
-    		
-    	case "neon-green":
-    		return "#44d62c";
-    		
-    	case "neon-blue":
-    		return "#009cde";
-
-		default:
-			return "";
-    		
-    	}
-    }
     
     function updateColor()
     {
-    	var color = getColorById(colorSelect);
+    	var color = colorSelect.color;
     	digitalBody.style.backgroundColor = color;
 
-    	var shaded = shadeColor(color, 191);
+    	var shaded = shadeColor(color, colorBrightness);
     	
     	strDay.style.color = shaded;
     	strHours.style.color = shaded;
     	strMinutes.style.color = shaded;
+    	colorPrev.style.color = shaded;
+    	colorNext.style.color = shaded;
     	batteryFill.style.color = shaded;
     	barometer.style.color = shaded;
-    	wifi.style.color = shaded;
-    	bt.style.color = shaded;
+    }
+    
+    
+    /**
+     * Called each second when active 
+     * @private
+     */
+    function tickUpdate()
+    {
+    	updateTime();
+    	updateWifi();
     }
     
     /**
@@ -212,22 +168,22 @@
      */
     function initDigitalWatch() 
     {
-        flagDigital = true;
-
+    	if(tickTimer !== 0)
+    	{
+        	clearInterval(tickTimer);
+    	}
+        
+    	tickTimer = setInterval(tickUpdate, 1000);
+        
         digitalBody.style.backgroundImage = BACKGROUND_URL;
-        digitalBody.style.backgroundColor = getColorById(colorSelect);
+        digitalBody.style.backgroundColor = colorSelect.color;
+        updateColor();
         
         batteryFill.style.display = "block";
         barometer.style.display = "block";
         wifi.style.display = "block";
-        bt.style.display = "none";
-        
-        if(timerUpdateTime)
-    	{
-        	clearInterval(timerUpdateTime);
-    	}
-        
-        timerUpdateTime = setInterval(updateTime, 1000);
+        colorPrev.style.display = "block";
+        colorNext.style.display = "block";
     }   
 
 
@@ -237,14 +193,11 @@
      */
     function ambientDigitalWatch() 
     {
-        flagDigital = false;
-        
-        if(timerUpdateTime)
+    	if(tickTimer !== 0)
     	{
-        	clearInterval(timerUpdateTime);
+        	clearInterval(tickTimer);
     	}
-        updateTime();
-        
+    	
         strDay.style.color = "#7f7f7f";
     	strHours.style.color = "#7f7f7f";
     	strMinutes.style.color = "#7f7f7f";
@@ -252,10 +205,11 @@
         digitalBody.style.backgroundImage = BACKGROUND_AMBIENT_URL;
         digitalBody.style.backgroundColor = "#000000";
         
+        colorPrev.style.color = "#000000";
+        colorNext.style.color = "#000000";
         batteryFill.style.display = "none";
         barometer.style.display = "none";
         wifi.style.display = "none";
-        bt.style.display = "none";
     }
 
     /**
@@ -279,41 +233,24 @@
     	{
 	    	if(tizen.systeminfo.getCapability("http://tizen.org/feature/network.wifi"))
 			{
-	    		 tizen.systeminfo.getPropertyValue("WIFI_NETWORK", 
-											 	function (wifiInfo) // OnSuccess
-											    {
-												 	if(wifiInfo.status !== "ON")
-										 			{
-												 		wifi.style.color = "#7f7f7f";
-									 				}
-											    },												    
-											    function() // OnError
-												{
-													wifi.style.color = "#7f7f7f";
-												});
-			}
-    	}
-    	catch(e)
-    	{
-    		
-    	}
-    }
-    
-    /**
-     * Update Bluetooth state
-     * @private
-     */
-    function updateBluetooth()
-    {
-    	try
-    	{
-	    	if(tizen.systeminfo.getCapability("http://tizen.org/feature/network.bluetooth"))
-			{
-	    		var adapter = tizen.bluetooth.getDefaultAdapter();
-	    		if (!adapter.powered)
-		      	{
-	    			bt.style.color = "#7f7f7f";
-	    		}
+	    		tizen.systeminfo.getPropertyValue("WIFI_NETWORK", 
+				 	function (wifiInfo) // OnSuccess
+				    {
+					 	if(wifiInfo.status !== "ON")
+			 			{
+					 		wifi.style.color = "#7f7f7f";
+		 				}
+					 	else
+					 	{
+					 		var color = colorSelect.color;
+					 		var shaded = shadeColor(color, colorBrightness);
+						 	wifi.style.color = shaded;
+					 	}
+				    },												    
+				    function() // OnError
+					{
+						wifi.style.color = "#7f7f7f";
+					});
 			}
     	}
     	catch(e)
@@ -330,12 +267,7 @@
     {
     	try
     	{
-			if(!pressureSensor)
-		    {
-	    		pressureSensor = tizen.sensorservice.getDefaultSensor("PRESSURE");
-		    }
-			
-			if(pressureSensor)
+			if(pressureSensor !== null)
 			{
 	    		pressureSensor.start(function() 
 	    	    {
@@ -344,44 +276,46 @@
 	    	    		pressureSensor.getPressureSensorData(
 	    	    		function(sensorData) // OnSuccess
 	    	    	    {
-	    	    	    	barometer.innerHTML = Math.round(sensorData.pressure) + "hPa";
+	    	    			barometer.innerHTML = Math.round(sensorData.pressure) + "hPa";
 	    	    	    }, 
 	    	    	    function() // OnError
 	    	    	    {
-	    	    	    	barometer.innerHTML = "n/a(2)";
+
 	    	    	    });
 	    	    	}
 	    	    	catch(e)
 	    	    	{
-	    	    		barometer.innerHTML = "n/a(3)";
+
 	    	    	}
 	    	    });		
 			}
     	}
     	catch(e)
     	{
-    		barometer.innerHTML = "n/a(1)";
+
     	}
     }
-
-
-    /**
-     * Updates watch screen. (time and date)
-     * @private
-     */
-    function updateWatch() {
-        updateTime();
-        updateDate(0);
-        updateColor();
-        updateWifi();
-        updateBluetooth();
-        
-        
-        if(timerUpdateBarometer)
+    
+    function previousColor()
+    {
+    	do
     	{
-        	clearInterval(timerUpdateBarometer);
+	    	colorCursor = (colorCursor - 1 < 0 ? colors.length - 1 : colorCursor - 1);
+	    }
+    	while(!colors[colorCursor].free || colors[colorCursor] === colorSelect);
+    	
+    	return colors[colorCursor];
+    }
+    
+    function nextColor()
+    {
+    	do
+    	{
+    		colorCursor = (colorCursor + 1 > colors.length - 1 ? 0 : colorCursor + 1);
     	}
-        timerUpdateBarometer = setTimeout(updateBarometer, 1000);
+    	while(!colors[colorCursor].free || colors[colorCursor] === colorSelect);
+    	
+    	return colors[colorCursor];
     }
 
     /**
@@ -404,7 +338,8 @@
 
         // add eventListener for timetick
         window.addEventListener("timetick", function() {
-            ambientDigitalWatch();
+        	updateTime();
+            updateDate();
         });
 
         // add eventListener for ambientmodechanged
@@ -416,21 +351,16 @@
             } else {
                 // rendering normal digital mode case
                 initDigitalWatch();
+                updateBarometer();
             }
         });
-
-        // add eventListener to update the screen immediately when the device wakes up.
-        document.addEventListener("visibilitychange", function() {
-            if (!document.hidden) {
-                updateWatch();
-            }
-        });
-
+        
         // add event listeners to update watch screen when the time zone is changed.
         try
     	{
 	        tizen.time.setTimezoneChangeListener(function() {
-	            updateWatch();
+	        	updateTime();
+                updateDate();
 	        });
     	}
         catch(e)
@@ -438,16 +368,14 @@
         	
         }
 
-        timeBody.onclick = function () {
-        	colorSelect = 
-        		colorSelect === "color-red" ? "color-blue" :
-    			colorSelect === "color-blue" ? "neon-blue" :
-				colorSelect === "neon-blue" ? "neon-green" :
-			    colorSelect === "neon-green" ? "color-green" :
-				colorSelect === "color-green" ? "neon-orange" :
-				colorSelect === "neon-orange" ? "color-red" :
-				"neon-blue";
-        	updateWatch();        	
+        colorPrev.onclick = function(){
+        	colorSelect = previousColor();        	
+        	updateColor();
+        };
+        
+        colorNext.onclick = function(){
+        	colorSelect = nextColor();
+        	updateColor();
         };
         
         strDay.onclick = function(){
@@ -456,7 +384,7 @@
         
         wifi.onclick = function(){
         	LaunchApp("com.samsung.wifi");
-        }
+        };
     }
     
     function onLaunchAppSuccess () {
@@ -499,9 +427,12 @@
     	try
     	{
 	        initDigitalWatch();
-	        updateDate(0);
-	        updateColor();
-	
+	        updateTime();
+            updateDate();
+            updateWifi();
+            
+            setTimeout(updateBarometer, 2000);
+
 	        bindEvents();
 	        
 	        updateInAppList();
